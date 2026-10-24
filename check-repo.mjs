@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { pathToFileURL } from "node:url";
 import { checkMarkdownFileLinks } from "./index.mjs";
 
 const skipDirs = new Set(["node_modules", "dist", "coverage", ".git"]);
@@ -49,7 +50,7 @@ export async function checkRepositoryMarkdownFiles(cwd, linkCheckOptions = {}) {
  * @param {string} argvEntry
  */
 export function isCheckRepoCliEntry(metaUrl, argvEntry) {
-  return metaUrl === new URL(argvEntry, "file:").href;
+  return metaUrl === pathToFileURL(argvEntry).href;
 }
 
 /**

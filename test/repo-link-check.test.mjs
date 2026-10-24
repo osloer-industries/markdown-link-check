@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { beforeEach, describe, it, mock } from "node:test";
 
 const linkCheckMock = mock.fn((_url, _options, callback) => {
@@ -205,9 +206,9 @@ describe("checkRepositoryMarkdownFiles", () => {
 
   it("detects check-repo cli entry", () => {
     const cliAbs = join(mkdtempSync(join(tmpdir(), "mlc-cli-entry-")), "check-repo.mjs");
-    const cliUrl = `file://${cliAbs}`;
+    const cliUrl = pathToFileURL(cliAbs).href;
     assert.equal(isCheckRepoCliEntry(cliUrl, cliAbs), true);
-    assert.equal(isCheckRepoCliEntry(cliUrl, "/other.mjs"), false);
+    assert.equal(isCheckRepoCliEntry(cliUrl, join(tmpdir(), "other.mjs")), false);
   });
 
   it("returns formatted failures", async () => {
