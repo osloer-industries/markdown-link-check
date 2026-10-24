@@ -1,18 +1,33 @@
 {
-  "name": "markdown-link-check",
-  "version": "3.15.0",
-  "description": "checks the all of the hyperlinks in a markdown text to determine if they are alive or dead",
+  "name": "@osloer-industries/markdown-link-check",
+  "version": "4.0.0",
+  "description": "Fork of markdown-link-check with upstream single-file checks plus repository-relative link validation for Node.js ESM projects.",
   "bin": {
-    "markdown-link-check": "markdown-link-check"
+    "markdown-link-check": "markdown-link-check",
+    "markdown-link-check-repo": "./check-repo-cli.mjs"
   },
   "main": "index.js",
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "pretest": "eslint .",
-    "test": "mocha -R spec --exit"
+    "test": "mocha -R spec --exit \"test/*.test.js\"",
+    "test:repo": "node --experimental-test-module-mocks --test --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 --test-coverage-include=index.mjs --test-coverage-include=check-repo.mjs test/repo-link-check.test.mjs"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/tcort/markdown-link-check.git"
+    "url": "git+https://github.com/osloer-industries/markdown-link-check.git"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "overrides": {
+    "basic-ftp": "6.2.3"
   },
   "keywords": [
     "markdown",
@@ -26,11 +41,18 @@
   "author": "Thomas Cort <linuxgeek@gmail.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/tcort/markdown-link-check/issues"
+    "url": "https://github.com/osloer-industries/markdown-link-check/issues"
   },
-  "homepage": "https://github.com/tcort/markdown-link-check#readme",
+  "homepage": "https://github.com/osloer-industries/markdown-link-check#readme",
   "files": [
-    "markdown-link-check"
+    "markdown-link-check",
+    "index.mjs",
+    "check-repo.mjs",
+    "check-repo-cli.mjs",
+    "ambient.d.ts",
+    "LICENSE.md",
+    "NOTICE.md",
+    "README.md"
   ],
   "dependencies": {
     "async": "^3.2.6",

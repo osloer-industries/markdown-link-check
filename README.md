@@ -347,6 +347,44 @@ public repository which accepts pull requests that automatically invoke
 `markdown-link-check` in an environment where credentials are accessible
 without human review as the secrets could be sent to an unintended host.
 
+## Osloer fork
+
+This repository is [osloer-industries/markdown-link-check](https://github.com/osloer-industries/markdown-link-check), a fork of [tcort/markdown-link-check](https://github.com/tcort/markdown-link-check) (ISC).
+
+**Why it exists:** Osloer projects need repository-wide Markdown link checks that resolve **relative paths on disk** (not as URLs), while still using upstream `link-check` for `http(s)` links. Consumers pass options such as `aliveStatusCodes: [200, 206]` so only successful HTTP responses count as alive. The fork also pins transitive `basic-ftp` via npm `overrides` and targets **Node.js 24+**.
+
+**Upstream sync:** Track [tcort/markdown-link-check `master`](https://github.com/tcort/markdown-link-check). Merge or cherry-pick upstream releases into this fork, keeping Osloer-specific files (`index.mjs`, `check-repo.mjs`, `NOTICE.md`, CI/Dependabot tweaks) in separate commits when possible.
+
+**Consume from other repos** (no build step; works with `npm ci --ignore-scripts`):
+
+```json
+{
+  "devDependencies": {
+    "@osloer-industries/markdown-link-check": "github:osloer-industries/markdown-link-check#v4.0.0-osloer.1"
+  },
+  "scripts": {
+    "lint:md-links": "markdown-link-check-repo --config .markdown-link-check.json"
+  }
+}
+```
+
+Example repo config (HTTP links only; relative links are validated on disk):
+
+```json
+{
+  "aliveStatusCodes": [200, 206],
+  "fallbackRetryDelay": "30s",
+  "ignorePatterns": [{ "pattern": "^mailto:" }],
+  "retryCount": 3,
+  "retryOn429": true,
+  "timeout": "30s"
+}
+```
+
+**API (ESM):** `import { checkMarkdownFileLinks } from "@osloer-industries/markdown-link-check"`. The classic CommonJS API remains `require("@osloer-industries/markdown-link-check")` → `index.js` (upstream behavior). CLI: `markdown-link-check` (single file) and `markdown-link-check-repo` (walk the repo).
+
+See [NOTICE.md](./NOTICE.md) for upstream attribution.
+
 ## License
 
-See [LICENSE.md](https://github.com/tcort/markdown-link-check/blob/master/LICENSE.md)
+See [LICENSE.md](./LICENSE.md)
