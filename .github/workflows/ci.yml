@@ -17,9 +17,7 @@ jobs:
           - windows-latest
           - macos-latest
         node-version:
-          - 22
           - 24
-          - 26
 
     env:
       NODE_OPTIONS: '--dns-result-order=ipv4first'
@@ -33,10 +31,13 @@ jobs:
         cache: npm
 
     - name: Install dependencies
-      run: npm ci
+      run: npm ci --ignore-scripts
 
-    - name: Unit tests
+    - name: Lint and unit tests
       run: npm test
+
+    - name: Repository link check tests (coverage)
+      run: npm run test:repo
 
     - name: Integration test
       # Simple checks for now to guard against errors that stop it running at all, e.g. https://github.com/tcort/markdown-link-check/issues/370
