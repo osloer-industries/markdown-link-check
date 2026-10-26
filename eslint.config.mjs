@@ -23,4 +23,14 @@ export default [
         },
       },
     },
+    {
+      files: ["**/*.mjs"],
+      languageOptions: {
+        sourceType: "module",
+        ecmaVersion: "latest",
+        globals: {
+          ...globals.node,
+        },
+      },
+    },
 ];
