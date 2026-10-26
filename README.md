@@ -355,6 +355,8 @@ This repository is [osloer-industries/markdown-link-check](https://github.com/os
 
 **Upstream sync:** Track [tcort/markdown-link-check `master`](https://github.com/tcort/markdown-link-check). Merge or cherry-pick upstream releases into this fork, keeping Osloer-specific files (`index.mjs`, `check-repo.mjs`, `NOTICE.md`, CI/Dependabot tweaks) in separate commits when possible.
 
+**Distribution:** Scoped npm name `@osloer-industries/markdown-link-check` for clarity in org repos; **not published to the public npm registry** — depend on **git release tags** only (see below). Requires **Node.js 24+** (`engines` in `package.json`).
+
 **Consume from other repos** (no build step; works with `npm ci --ignore-scripts`):
 
 ```json
