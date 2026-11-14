@@ -351,7 +351,7 @@ without human review as the secrets could be sent to an unintended host.
 
 This repository is [osloer-industries/markdown-link-check](https://github.com/osloer-industries/markdown-link-check), a fork of [tcort/markdown-link-check](https://github.com/tcort/markdown-link-check) (ISC).
 
-**Why it exists:** Osloer projects need repository-wide Markdown link checks that resolve **relative paths on disk** (not as URLs), while still using upstream `link-check` for `http(s)` links. Consumers pass options such as `aliveStatusCodes: [200, 206]` so only successful HTTP responses count as alive. The fork also pins transitive `basic-ftp` via npm `overrides` and targets **Node.js 24+**.
+**Why it exists:** Osloer projects need repository-wide Markdown link checks that resolve **relative paths on disk** (not as URLs), while still using upstream `link-check` for `http(s)` links. Consumers pass options such as `aliveStatusCodes: [200, 206]` so only successful HTTP responses count as alive. The fork pins patched transitive dependencies (`basic-ftp`, `minimatch`, `glob`) via npm `overrides` where upstream ranges have not caught up, and targets **Node.js 24+**.
 
 **Upstream sync:** Track [tcort/markdown-link-check `master`](https://github.com/tcort/markdown-link-check). Merge or cherry-pick upstream releases into this fork, keeping Osloer-specific files (`index.mjs`, `check-repo.mjs`, `NOTICE.md`, CI/Dependabot tweaks) in separate commits when possible.
 
@@ -362,7 +362,7 @@ This repository is [osloer-industries/markdown-link-check](https://github.com/os
 ```json
 {
   "devDependencies": {
-    "@osloer-industries/markdown-link-check": "github:osloer-industries/markdown-link-check#v4.0.0-osloer.1"
+    "@osloer-industries/markdown-link-check": "github:osloer-industries/markdown-link-check#v4.0.0-osloer.2"
   },
   "scripts": {
     "lint:md-links": "markdown-link-check-repo --config .markdown-link-check.json"
