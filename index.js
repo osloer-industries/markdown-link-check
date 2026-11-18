@@ -75,9 +75,9 @@ function extractSections(markdown) {
                 // (Unicode) Number letter, white space, underscore or hyphen
                 // https://ruby-doc.org/3.3.2/Regexp.html#class-Regexp-label-Unicode+Character+Categories
                 .replace(/[^\p{L}\p{Nd}\p{Nl}\s_\-`]/gu, "")
-                .replace(/\*/gu, "")
+                .replaceAll('*', '')
                 // remove leftover backticks
-                .replace(/`/gu, "")
+                .replaceAll('`', '')
                 // Now replace remaining blanks with '-'
                 .replace(/\s/gu, "-")
         )

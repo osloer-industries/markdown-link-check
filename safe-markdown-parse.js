@@ -1,5 +1,25 @@
 'use strict';
 
+const FENCE_OPEN_RE = /^([ \t]*)(`{3,}|~{3,})/u;
+const FENCE_CLOSE_RE = /^([ \t]*)(`{3,}|~{3,})\s*$/u;
+const TAG_NAME_RE = /^<\s*([^\s>/]+)/u;
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function trimCommentWhitespace(value) {
+  let start = 0;
+  let end = value.length;
+  while (start < end && (value[start] === ' ' || value[start] === '\t')) {
+    start += 1;
+  }
+  while (end > start && (value[end - 1] === ' ' || value[end - 1] === '\t')) {
+    end -= 1;
+  }
+  return value.slice(start, end);
+}
+
 /**
  * @param {string} markdown
  * @param {number} fromIndex
@@ -17,8 +37,7 @@ function indexOfCommentMarker(markdown, fromIndex, markerBody) {
     if (commentEnd === -1) {
       return -1;
     }
-    const inner = markdown.slice(commentStart + 4, commentEnd);
-    const normalized = inner.replace(/^[ \t]+/u, '').replace(/[ \t]+$/u, '');
+    const normalized = trimCommentWhitespace(markdown.slice(commentStart + 4, commentEnd));
     if (normalized === markerBody) {
       return commentStart;
     }
@@ -53,15 +72,15 @@ function removeCodeBlocks(markdown) {
   let fenceMarker;
 
   for (const line of lines) {
-    const opening = line.match(/^([ \t]*)(`{3,}|~{3,})/u);
+    const opening = FENCE_OPEN_RE.exec(line);
     if (!inFence && opening) {
       inFence = true;
       fenceMarker = opening[2];
       continue;
     }
     if (inFence && fenceMarker) {
-      const closing = line.match(/^([ \t]*)(`{3,}|~{3,})\s*$/u);
-      if (closing && closing[2] === fenceMarker) {
+      const closing = FENCE_CLOSE_RE.exec(line);
+      if (closing?.[2] === fenceMarker) {
         inFence = false;
         fenceMarker = undefined;
         continue;
@@ -128,6 +147,65 @@ function removeInlineCode(markdown) {
 }
 
 /**
+ * @param {string} char
+ * @returns {boolean}
+ */
+function isHtmlWhitespace(char) {
+  return char === ' ' || char === '\t' || char === '\n' || char === '\r';
+}
+
+/**
+ * @param {string} text
+ * @param {number} from
+ * @returns {number}
+ */
+function skipHtmlWhitespace(text, from) {
+  let cursor = from;
+  while (cursor < text.length && isHtmlWhitespace(text[cursor])) {
+    cursor += 1;
+  }
+  return cursor;
+}
+
+/**
+ * @param {string} lower
+ * @param {number} attrIndex
+ * @param {number} attrLength
+ * @returns {boolean}
+ */
+function isAttributeToken(lower, attrIndex, attrLength) {
+  const before = attrIndex === 0 ? '' : lower[attrIndex - 1];
+  const afterAttr = lower[attrIndex + attrLength];
+  const isBoundaryBefore = before === '' || isHtmlWhitespace(before) || before === '>' || before === '/';
+  const isBoundaryAfter = afterAttr === undefined || isHtmlWhitespace(afterAttr) || afterAttr === '=';
+  return isBoundaryBefore && isBoundaryAfter;
+}
+
+/**
+ * @param {string} tagSource
+ * @param {number} nameEnd
+ * @returns {string | undefined}
+ */
+function readQuotedValueAfterName(tagSource, nameEnd) {
+  let cursor = skipHtmlWhitespace(tagSource, nameEnd);
+  if (tagSource[cursor] !== '=') {
+    return undefined;
+  }
+  cursor = skipHtmlWhitespace(tagSource, cursor + 1);
+  const quote = tagSource[cursor];
+  if (quote !== '"' && quote !== '\'') {
+    return undefined;
+  }
+  cursor += 1;
+  let value = '';
+  while (cursor < tagSource.length && tagSource[cursor] !== quote) {
+    value += tagSource[cursor];
+    cursor += 1;
+  }
+  return value;
+}
+
+/**
  * @param {string} tagSource
  * @param {string} attributeName
  * @returns {string | undefined}
@@ -141,38 +219,15 @@ function readQuotedAttribute(tagSource, attributeName) {
     if (attrIndex === -1) {
       return undefined;
     }
-    const before = attrIndex === 0 ? '' : lower[attrIndex - 1];
-    const afterAttr = lower[attrIndex + attr.length];
-    const isBoundaryBefore = before === '' || /[\s>/]/u.test(before);
-    const isBoundaryAfter = afterAttr === undefined || /[\s=]/u.test(afterAttr);
-    if (!isBoundaryBefore || !isBoundaryAfter) {
+    if (!isAttributeToken(lower, attrIndex, attr.length)) {
       searchFrom = attrIndex + attr.length;
       continue;
     }
-    let cursor = attrIndex + attr.length;
-    while (cursor < tagSource.length && /\s/u.test(tagSource[cursor])) {
-      cursor += 1;
+    const value = readQuotedValueAfterName(tagSource, attrIndex + attr.length);
+    if (value !== undefined) {
+      return value;
     }
-    if (tagSource[cursor] !== '=') {
-      searchFrom = attrIndex + attr.length;
-      continue;
-    }
-    cursor += 1;
-    while (cursor < tagSource.length && /\s/u.test(tagSource[cursor])) {
-      cursor += 1;
-    }
-    const quote = tagSource[cursor];
-    if (quote !== '"' && quote !== '\'') {
-      searchFrom = attrIndex + attr.length;
-      continue;
-    }
-    cursor += 1;
-    let value = '';
-    while (cursor < tagSource.length && tagSource[cursor] !== quote) {
-      value += tagSource[cursor];
-      cursor += 1;
-    }
-    return value;
+    searchFrom = attrIndex + attr.length;
   }
   return undefined;
 }
@@ -198,7 +253,7 @@ function extractHtmlSectionIds(markdown) {
     if (id !== undefined) {
       sections.push(id);
     }
-    const tagNameMatch = /^<\s*([^\s>/]+)/u.exec(tag);
+    const tagNameMatch = TAG_NAME_RE.exec(tag);
     const tagName = tagNameMatch?.[1]?.toLowerCase();
     if (tagName === 'a') {
       const name = readQuotedAttribute(tag, 'name');
