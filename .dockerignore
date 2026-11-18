@@ -1,0 +1,13 @@
+.git
+.github
+.gitignore
+.editorconfig
+.nvmrc
+.pre-commit-hooks.yaml
+AGENTS.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE.md
+NOTICE.md
+README.md
+ambient.d.ts

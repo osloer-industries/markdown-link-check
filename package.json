@@ -48,6 +48,8 @@
   "homepage": "https://github.com/osloer-industries/markdown-link-check#readme",
   "files": [
     "markdown-link-check",
+    "index.js",
+    "safe-markdown-parse.js",
     "index.mjs",
     "check-repo.mjs",
     "check-repo-cli.mjs",
