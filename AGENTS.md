@@ -13,7 +13,7 @@
 - `npm test` — ESLint (`pretest`) plus Mocha unit tests.
 - `npm run test:repo` — Node native test runner with coverage for `index.mjs` and `check-repo.mjs`.
 
-CI (`.github/workflows/ci.yml`) runs the same commands on Ubuntu, Windows, and macOS, plus a small CLI integration smoke test.
+CI (`.github/workflows/ci.yml`) runs org reusable gates (workflow security, `npm run check`, CodeQL, SonarCloud, and **`ci-passed`**) on `pull_request` / `push` to `master`, plus a cross-OS `test-library` matrix (Ubuntu, Windows, macOS) with the same lint/tests/integration smoke as local development.
 
 **Release:** create a GitHub **Release**; the [Release workflow](.github/workflows/release.yml) publishes the package to npm (when configured) and builds/pushes Docker images to `ghcr.io`.
 
@@ -39,5 +39,5 @@ These rules apply to every agent (Cursor, Grok Bot, any other) working in this r
 ### Pull requests
 - Keep PRs focused and reviewable, link the issues they close, and prefer simplification (less code, fewer dependencies, removed duplication).
 - Resolve conflicts by merging the base branch in. Never rebase a pushed branch, never force-push, never bypass branch protection.
-- A PR is ready for review only when all of these hold: it has no conflicts and is up to date with `main`; every check on the current head is green (pending is not ready); and it has no unresolved review threads, requested changes or open SonarCloud issues. Fix anything short of that yourself. Ask a human only when a real decision or ambiguity needs one.
+- A PR is ready for review only when all of these hold: it has no conflicts and is up to date with `master`; every check on the current head is green (pending is not ready); and it has no unresolved review threads, requested changes or open SonarCloud issues. Fix anything short of that yourself. Ask a human only when a real decision or ambiguity needs one.
 - Never touch secrets, permissions, repo settings or rulesets without explicit human approval.
