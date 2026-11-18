@@ -7,6 +7,12 @@ const markdownLinkExtractor = require('markdown-link-extractor');
 const ProgressBar = require('progress');
 
 const envVarPatternMatcher = /(?<pattern>{{env\.(?<name>[a-zA-Z0-9\-_]+)}})/;
+const {
+    removeCodeBlocks,
+    extractHtmlSectionIds,
+    stripDisabledLinkCheckRegions,
+    prepareMarkdownForHtmlSectionScan,
+} = require('./safe-markdown-parse');
 
 /*
  * Performs some special replacements for the following patterns:
@@ -42,27 +48,8 @@ function performSpecialReplacements(str, opts) {
     return str;
 }
 
-function removeCodeBlocks(markdown) {
-    return markdown.replace(/^[ \t]*(`{3,}|~{3,})[\S\s]+?^[ \t]*\1$/gm, '');
-}
-
 function extractHtmlSections(markdown) {
-    markdown =
-        // remove code blocks
-        removeCodeBlocks(markdown)
-        // remove HTML comments
-        .replace(/<!--[\S\s]+?-->/gm, '')
-        // remove single line code (if not escaped with "\")
-        .replace(/(?<!\\)`[\S\s]+?(?<!\\)`/gm, '');
-
-    const regexAllId = /<(?<tag>[^\s]+).*?id=["'](?<id>[^"']*?)["'].*?>/gmi;
-    const regexAName = /<a.*?name=["'](?<name>[^"']*?)["'].*?>/gmi;
-
-    const sections = []
-        .concat(Array.from(markdown.matchAll(regexAllId), (match) => match.groups.id))
-        .concat(Array.from(markdown.matchAll(regexAName), (match) => match.groups.name));
-
-    return sections
+    return extractHtmlSectionIds(prepareMarkdownForHtmlSectionScan(markdown));
 }
 
 function extractSections(markdown) {
@@ -88,10 +75,9 @@ function extractSections(markdown) {
                 // (Unicode) Number letter, white space, underscore or hyphen
                 // https://ruby-doc.org/3.3.2/Regexp.html#class-Regexp-label-Unicode+Character+Categories
                 .replace(/[^\p{L}\p{Nd}\p{Nl}\s_\-`]/gu, "")
-                // remove sequences of *
-                .replace(/\*(?=.*)/gu, "")
+                .replaceAll('*', '')
                 // remove leftover backticks
-                .replace(/`/gu, "")
+                .replaceAll('`', '')
                 // Now replace remaining blanks with '-'
                 .replace(/\s/gu, "-")
         )
@@ -117,15 +103,8 @@ module.exports = function markdownLinkCheck(markdown, opts, callback) {
         opts = {};
     }
 
-    if(!opts.ignoreDisable) {
-        markdown = [
-            /(<!--[ \t]+markdown-link-check-disable[ \t]+-->[\S\s]*?<!--[ \t]+markdown-link-check-enable[ \t]+-->)/mg,
-            /(<!--[ \t]+markdown-link-check-disable[ \t]+-->[\S\s]*(?!<!--[ \t]+markdown-link-check-enable[ \t]+-->))/mg,
-            /(<!--[ \t]+markdown-link-check-disable-next-line[ \t]+-->\r?\n[^\r\n]*)/mg,
-            /([^\r\n]*<!--[ \t]+markdown-link-check-disable-line[ \t]+-->[^\r\n]*)/mg
-        ].reduce(function(_markdown, disablePattern) {
-            return _markdown.replace(new RegExp(disablePattern), '');
-        }, markdown);
+    if (!opts.ignoreDisable) {
+        markdown = stripDisabledLinkCheckRegions(markdown);
     }
 
     const links = markdownLinkExtractor(markdown);
