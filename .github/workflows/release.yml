@@ -24,9 +24,7 @@ jobs:
           cache: false
           package-manager-cache: false
       - run: npm ci --ignore-scripts
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --provenance --access public
 
   docker-build-and-publish:
     name: "Docker: Build & Publish"
