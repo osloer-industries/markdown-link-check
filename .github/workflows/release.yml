@@ -8,12 +8,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7
-    - uses: actions/setup-node@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       with:
         node-version: '24.x'
         registry-url: 'https://registry.npmjs.org'
-    - run: npm install
+    - run: npm ci --ignore-scripts
     - run: npm publish
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -35,10 +35,10 @@ jobs:
           | sed -e 's/refs\/tags\///g' \
           | sed -E 's/v?([0-9]+)\.([0-9]+)\.([0-9]+)(-[a-zA-Z]+(\.[0-9]+)?)?/\1.\2.\3\4\,\1.\2\4\,\1\4/g')" >> $GITHUB_ENV
       - name: "Repo: Checkout"
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: "Docker: Build & Publish"
         id: build
-        uses: elgohr/Publish-Docker-Github-Action@v5
+        uses: elgohr/Publish-Docker-Github-Action@1c2f28ccd9476e8a936ac9a1f287405504c93304 # v5
         with:
           name: ${{ env.IMAGE_NAME }}
           registry: ${{ env.REGISTRY }}
