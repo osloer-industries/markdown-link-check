@@ -14,8 +14,7 @@ RUN set -ex; \
     npm ci --ignore-scripts
 COPY index.js safe-markdown-parse.js markdown-link-check eslint.config.mjs ./
 COPY test ./test
-RUN ln -s /src/markdown-link-check /usr/local/bin/markdown-link-check
-RUN chown -R app:app /src
+RUN ln -s /src/markdown-link-check /usr/local/bin/markdown-link-check && chown -R app:app /src
 USER app
 # hadolint ignore=DL3059
 RUN npm test

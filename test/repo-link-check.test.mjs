@@ -71,6 +71,7 @@ describe("checkMarkdownFileLinks", () => {
       const markdown = "[Guide](docs/guide.md)\n";
       writeFileSync(readme, markdown);
       await checkMarkdownFileLinks(markdown, readme);
+      assert.equal(linkCheckMock.mock.calls.length, 0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -143,6 +144,11 @@ describe("link helpers", () => {
       callback(undefined, { status: "alive", statusCode: 206 });
     });
     await checkHttpLink("https://example.com/range", { aliveStatusCodes: [200, 206] });
+    assert.equal(linkCheckMock.mock.calls.length, 1);
+    assert.equal(linkCheckMock.mock.calls[0].arguments[0], "https://example.com/range");
+    assert.deepEqual(linkCheckMock.mock.calls[0].arguments[1], {
+      aliveStatusCodes: [200, 206],
+    });
   });
 });
 
@@ -179,6 +185,7 @@ describe("checkRepositoryMarkdownFiles", () => {
       const configPath = join(dir, "link-check.json");
       writeFileSync(configPath, JSON.stringify({ aliveStatusCodes: [200, 206] }));
       await runCheckRepoCli(["node", "check-repo-cli.mjs", "--config", configPath], dir);
+      assert.equal(linkCheckMock.mock.calls.length, 0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
