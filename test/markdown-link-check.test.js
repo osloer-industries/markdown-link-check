@@ -7,6 +7,7 @@ const http = require('http');
 const express = require('express');
 const child_process = require('child_process');
 const markdownLinkCheck = require('../');
+const { expectLinkCheckResults } = require('./helpers/expect-link-check-results');
 const dirname = process.platform === 'win32' ? __dirname.replace(/\\/g, '/') : __dirname;
 
 describe('markdown-link-check', function () {
@@ -187,12 +188,7 @@ describe('markdown-link-check', function () {
                 { statusCode: 200, status: 'alive' },
 
             ];
-            expect(results.length).to.be(expected.length);
-
-            for (let i = 0; i < results.length; i++) {
-                expect(results[i].statusCode).to.be(expected[i].statusCode);
-                expect(results[i].status).to.be(expected[i].status);
-            }
+            expectLinkCheckResults(expect, results, expected);
 
             done();
         });
@@ -209,12 +205,7 @@ describe('markdown-link-check', function () {
                 { statusCode: 404, status:  'dead' },
             ];
 
-            expect(results.length).to.be(expected.length);
-
-            for (let i = 0; i < results.length; i++) {
-                expect(results[i].statusCode).to.be(expected[i].statusCode);
-                expect(results[i].status).to.be(expected[i].status);
-            }
+            expectLinkCheckResults(expect, results, expected);
 
             done();
         });
@@ -234,12 +225,7 @@ describe('markdown-link-check', function () {
                 { statusCode: 400, status:  'dead' },
             ];
 
-            expect(results.length).to.be(expected.length);
-
-            for (let i = 0; i < results.length; i++) {
-                expect(results[i].statusCode).to.be(expected[i].statusCode);
-                expect(results[i].status).to.be(expected[i].status);
-            }
+            expectLinkCheckResults(expect, results, expected);
 
             done();
         });
@@ -296,13 +282,45 @@ describe('markdown-link-check', function () {
                 { statusCode: 200, status: 'alive' }
             ];
 
-            expect(results.length).to.be(expected.length);
+            expectLinkCheckResults(expect, results, expected);
 
-            for (let i = 0; i < results.length; i++) {
-                expect(results[i].statusCode).to.be(expected[i].statusCode);
-                expect(results[i].status).to.be(expected[i].status);
-            }
+            done();
+        });
+    });
 
+    it('normalizes adversarial heading input in linear time', function (done) {
+        const adversarialHeading = `# ${'[' + '[\\'.repeat(50_000)}`;
+        const md = `${adversarialHeading}\n`;
+        const start = Date.now();
+        markdownLinkCheck(md, function (err, results) {
+            const elapsed = Date.now() - start;
+            expect(err).to.be(null);
+            expect(results).to.eql([]);
+            expect(elapsed).to.be.below(500);
+            done();
+        });
+    });
+
+    it('should encode headings that contain inline markdown links', function (done) {
+        const md = [
+            '### [Heading with a link](#heading-with-a-link)',
+            '',
+            '[first](#heading-with-a-link)',
+            '### [Relative title](#relative-title)',
+            '',
+            '[second](#relative-title)',
+            '## Plain [text](#plain-text-tail) tail',
+            '',
+            '[third](#plain-text-tail)',
+        ].join('\n');
+
+        markdownLinkCheck(md, function (err, results) {
+            expect(err).to.be(null);
+            expectLinkCheckResults(expect, results, [
+                { statusCode: 200, status: 'alive' },
+                { statusCode: 200, status: 'alive' },
+                { statusCode: 200, status: 'alive' },
+            ]);
             done();
         });
     });
@@ -344,12 +362,7 @@ describe('markdown-link-check', function () {
                 { statusCode: 400, status:  'dead' },
             ];
 
-            expect(results.length).to.be(expected.length);
-
-            for (let i = 0; i < results.length; i++) {
-                expect(results[i].statusCode).to.be(expected[i].statusCode);
-                expect(results[i].status).to.be(expected[i].status);
-            }
+            expectLinkCheckResults(expect, results, expected);
 
             done();
         });
@@ -386,12 +399,7 @@ describe('markdown-link-check', function () {
                 { statusCode: 200, status: 'alive' }
             ];
 
-            expect(results.length).to.be(expected.length);
-
-            for (let i = 0; i < results.length; i++) {
-                expect(results[i].statusCode).to.be(expected[i].statusCode);
-                expect(results[i].status).to.be(expected[i].status);
-            }
+            expectLinkCheckResults(expect, results, expected);
 
             done();
         });
@@ -412,12 +420,7 @@ describe('markdown-link-check', function () {
                 { statusCode: 200, status: 'alive' }
             ];
 
-            expect(results.length).to.be(expected.length);
-
-            for (let i = 0; i < results.length; i++) {
-                expect(results[i].statusCode).to.be(expected[i].statusCode);
-                expect(results[i].status).to.be(expected[i].status);
-            }
+            expectLinkCheckResults(expect, results, expected);
 
             done();
         });
