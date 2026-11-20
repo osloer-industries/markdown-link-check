@@ -288,6 +288,19 @@ describe('markdown-link-check', function () {
         });
     });
 
+    it('normalizes adversarial heading input in linear time', function (done) {
+        const adversarialHeading = `# ${'[' + '[\\'.repeat(50_000)}`;
+        const md = `${adversarialHeading}\n`;
+        const start = Date.now();
+        markdownLinkCheck(md, function (err, results) {
+            const elapsed = Date.now() - start;
+            expect(err).to.be(null);
+            expect(results).to.eql([]);
+            expect(elapsed).to.be.below(500);
+            done();
+        });
+    });
+
     it('should encode headings that contain inline markdown links', function (done) {
         const md = [
             '### [Heading with a link](#heading-with-a-link)',

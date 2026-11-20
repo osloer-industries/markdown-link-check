@@ -1,20 +1,23 @@
 'use strict';
 
-const path = require('path');
-const { spawn } = require('child_process');
+const path = require('node:path');
+const { spawn } = require('node:child_process');
 
 const cliPath = path.join(__dirname, '..', '..', 'markdown-link-check');
 
 /**
  * @param {string[]} cliArgs Arguments after the CLI path (e.g. '--reporters', 'junit', filePath)
- * @param {import('child_process').SpawnOptions} [spawnOptions]
+ * @param {import('node:child_process').SpawnOptions} [spawnOptions]
  */
 function spawnMarkdownLinkCheck(cliArgs, spawnOptions) {
-    return spawn('node', [cliPath, ...cliArgs], { stdio: 'pipe', ...spawnOptions });
+    return spawn(process.execPath, [cliPath, ...cliArgs], {
+        stdio: 'pipe',
+        ...spawnOptions,
+    });
 }
 
 /**
- * @param {import('child_process').ChildProcessWithoutNullStreams} child
+ * @param {import('node:child_process').ChildProcessWithoutNullStreams} child
  * @returns {Promise<{ stdout: string, exitCode: number | null }>}
  */
 function collectChildOutput(child) {

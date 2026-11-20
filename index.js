@@ -7,8 +7,6 @@ const markdownLinkExtractor = require('markdown-link-extractor');
 const ProgressBar = require('progress');
 
 const envVarPatternMatcher = /(?<pattern>{{env\.(?<name>[a-zA-Z0-9\-_]+)}})/;
-const headingInlineLinkPattern =
-    /\[([^\]]+)\]\(((?:\.?\/|https?:\/\/|#)[\w./?=#-]+)\)/;
 const {
     removeCodeBlocks,
     extractHtmlSectionIds,
@@ -54,10 +52,109 @@ function extractHtmlSections(markdown) {
     return extractHtmlSectionIds(prepareMarkdownForHtmlSectionScan(markdown));
 }
 
+function isAllowedHeadingUrlCharacter(character) {
+    if (character >= '0' && character <= '9') {
+        return true;
+    }
+    if (character >= 'A' && character <= 'Z') {
+        return true;
+    }
+    if (character >= 'a' && character <= 'z') {
+        return true;
+    }
+    return (
+        character === '.' ||
+        character === '/' ||
+        character === '?' ||
+        character === '=' ||
+        character === '#' ||
+        character === '-' ||
+        character === '_'
+    );
+}
+
+function headingLinkUrlPrefixLength(headingLine, urlStart) {
+    const tail = headingLine.slice(urlStart);
+    if (tail.startsWith('https://')) {
+        return 'https://'.length;
+    }
+    if (tail.startsWith('http://')) {
+        return 'http://'.length;
+    }
+    if (tail.startsWith('./')) {
+        return 2;
+    }
+    if (tail.startsWith('/')) {
+        return 1;
+    }
+    if (tail.startsWith('#')) {
+        return 1;
+    }
+    return -1;
+}
+
+function parseHeadingLinkUrl(headingLine, urlStart) {
+    const prefixLength = headingLinkUrlPrefixLength(headingLine, urlStart);
+    if (prefixLength < 0) {
+        return null;
+    }
+
+    let urlEnd = urlStart + prefixLength;
+    while (urlEnd < headingLine.length) {
+        const character = headingLine[urlEnd];
+        if (character === ')') {
+            break;
+        }
+        if (!isAllowedHeadingUrlCharacter(character)) {
+            return null;
+        }
+        urlEnd += 1;
+    }
+    if (urlEnd >= headingLine.length || headingLine[urlEnd] !== ')') {
+        return null;
+    }
+    if (urlEnd === urlStart + prefixLength) {
+        return null;
+    }
+
+    return { urlEnd, url: headingLine.slice(urlStart, urlEnd) };
+}
+
+function replaceFirstHeadingInlineLink(headingLine) {
+    const openBracket = headingLine.indexOf('[');
+    if (openBracket === -1) {
+        return headingLine;
+    }
+
+    let closeBracket = openBracket + 1;
+    while (closeBracket < headingLine.length && headingLine[closeBracket] !== ']') {
+        closeBracket += 1;
+    }
+    if (closeBracket >= headingLine.length) {
+        return headingLine;
+    }
+
+    if (headingLine[closeBracket + 1] !== '(') {
+        return headingLine;
+    }
+
+    const urlStart = closeBracket + 2;
+    const parsedUrl = parseHeadingLinkUrl(headingLine, urlStart);
+    if (!parsedUrl) {
+        return headingLine;
+    }
+
+    const linkText = headingLine.slice(openBracket + 1, closeBracket);
+    return (
+        headingLine.slice(0, openBracket) +
+        linkText +
+        headingLine.slice(parsedUrl.urlEnd + 1)
+    );
+}
+
 function normalizeSectionHeading(section) {
     return encodeURIComponent(
-        section
-            .replace(headingInlineLinkPattern, '$1')
+        replaceFirstHeadingInlineLink(section)
             .toLowerCase()
             .replace(/^#+\s*/, '')
             .replace(/[^\p{L}\p{Nd}\p{Nl}\s_\-`]/gu, '')
@@ -106,13 +203,14 @@ function applyReplacementPatterns(link, opts) {
         return updatedLink;
     }
     for (const replacementPattern of opts.replacementPatterns) {
-        const pattern =
-            replacementPattern.pattern instanceof RegExp
-                ? replacementPattern.pattern
-                : new RegExp(
-                      replacementPattern.pattern,
-                      replacementPattern.global ? 'g' : ''
-                  );
+        let pattern = replacementPattern.pattern;
+        if (!(pattern instanceof RegExp)) {
+            let flags = '';
+            if (replacementPattern.global) {
+                flags = 'g';
+            }
+            pattern = new RegExp(replacementPattern.pattern, flags);
+        }
         updatedLink = updatedLink.replace(
             pattern,
             performSpecialReplacements(replacementPattern.replacement, opts)
